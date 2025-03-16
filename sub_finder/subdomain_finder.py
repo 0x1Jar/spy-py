@@ -32,7 +32,7 @@ def search_wayback_machine(domain):
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
         
-        response = requests.get(url, params=params, headers=headers, timeout=30)
+        response = requests.get(url, params=params, headers=headers, timeout=60)
         if response.status_code != 200:
             logging.error(f"Wayback Machine returned status code: {response.status_code}")
             return list(subdomains)

@@ -51,11 +51,11 @@ def main():
     try:
         start_time = time.time()
         
-        logging.info(f"Starting subdomain enumeration for: {args.domain}")
+        logging.info(f"🚀 Starting subdomain enumeration for: {args.domain} 🔍")
         
         # Search all sources
         all_subdomains = sf.search_all_sources(args.domain)
-        logging.info(f"Total unique subdomains found: {len(all_subdomains)}")
+        logging.info(f"✅ Total unique subdomains found: {len(all_subdomains)} ✨")
         
         # Check if subdomains are alive if requested
         alive_status = {}
@@ -63,7 +63,7 @@ def main():
             logging.info("Checking subdomain status...")
             alive_status = sf.check_alive_parallel(all_subdomains)
             alive_count = sum(1 for status in alive_status.values() if status)
-            logging.info(f"Found {alive_count} active subdomains")
+            logging.info(f"✅ Found {alive_count} active subdomains 💡")
         
         # Output results
         if args.output:

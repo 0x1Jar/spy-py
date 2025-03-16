@@ -7,6 +7,7 @@ import time
 import re
 import dns.resolver
 import socket
+from bs4 import BeautifulSoup # type: ignore
 
 def chunk_list(lst, chunk_size):
     """Split a list into smaller chunks"""
@@ -178,3 +179,113 @@ def check_alive_parallel(subdomains, timeout=5):
                 logging.debug(f"Error checking {subdomain}: {str(e)}")
 
     return results
+
+class SubdomainFinder:
+    def __init__(self, domain):
+        self.domain = domain
+        self.headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        self.timeout = 30
+
+    def search_alienvault(self):
+        subdomains = set()
+        try:
+            url = f"https://otx.alienvault.com/api/v1/indicators/domain/{self.domain}/passive_dns"
+            response = requests.get(url, headers=self.headers, timeout=self.timeout)
+            if response.status_code == 200:
+                data = response.json()
+                for entry in data.get("passive_dns", []):
+                    hostname = entry.get("hostname", "").lower()
+                    if hostname and is_valid_subdomain(hostname, self.domain):
+                        subdomains.add(hostname)
+        except Exception as e:
+            logging.error(f"Error in Alienvault search: {str(e)}")
+        return list(subdomains)
+
+    def search_certspotter(self):
+        subdomains = set()
+        try:
+            url = f"https://api.certspotter.com/v1/issuances?domain={self.domain}&include_subdomains=true&expand=dns_names"
+            response = requests.get(url, headers=self.headers, timeout=self.timeout)
+            if response.status_code == 200:
+                data = response.json()
+                for cert in data:
+                    for dns_name in cert.get("dns_names", []):
+                        if dns_name.lower().endswith(self.domain) and is_valid_subdomain(dns_name, self.domain):
+                            subdomains.add(dns_name.lower())
+        except Exception as e:
+            logging.error(f"Error in Certspotter search: {str(e)}")
+        return list(subdomains)
+
+    def search_hackertarget(self):
+        subdomains = set()
+        try:
+            url = f"https://api.hackertarget.com/hostsearch/?q={self.domain}"
+            response = requests.get(url, headers=self.headers, timeout=self.timeout)
+            if response.status_code == 200:
+                lines = response.text.split('\n')
+                for line in lines:
+                    if ',' in line:
+                        hostname = line.split(',')[0].lower()
+                        if hostname and is_valid_subdomain(hostname, self.domain):
+                            subdomains.add(hostname)
+        except Exception as e:
+            logging.error(f"Error in HackerTarget search: {str(e)}")
+        return list(subdomains)
+
+    def search_rapiddns(self):
+        subdomains = set()
+        try:
+            url = f"https://rapiddns.io/subdomain/{self.domain}"
+            response = requests.get(url, headers=self.headers, timeout=self.timeout)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, 'html.parser')
+                table = soup.find('table', {'class': 'table'})
+                if table:
+                    for row in table.find_all('tr'):
+                        cols = row.find_all('td')
+                        if cols and len(cols) > 0:
+                            hostname = cols[0].text.strip().lower()
+                            if hostname and is_valid_subdomain(hostname, self.domain):
+                                subdomains.add(hostname)
+        except Exception as e:
+            logging.error(f"Error in RapidDNS search: {str(e)}")
+        return list(subdomains)
+
+def search_all_sources(domain):
+    """
+    Search all available sources for subdomains
+    """
+    finder = SubdomainFinder(domain)
+    all_subdomains = set()
+    
+    # Define search functions
+    search_functions = [
+        (finder.search_alienvault, "Alienvault"),
+        (finder.search_certspotter, "Certspotter"),
+        (finder.search_hackertarget, "HackerTarget"),
+        (finder.search_rapiddns, "RapidDNS"),
+        (search_wayback_machine, "Wayback Machine"),
+        (ct_logs_subdomains, "CT Logs")
+    ]
+    
+    # Execute searches in parallel
+    with ThreadPoolExecutor(max_workers=len(search_functions)) as executor:
+        future_to_source = {
+            executor.submit(func, domain) if func in [search_wayback_machine, ct_logs_subdomains] else executor.submit(func): 
+            name for func, name in search_functions
+        }
+        
+        for future in as_completed(future_to_source):
+            source_name = future_to_source[future]
+            try:
+                result = future.result()
+                if result:
+                    new_count = len(set(result) - all_subdomains)
+                    all_subdomains.update(result)
+                    logging.info(f"Found {new_count} new subdomains from {source_name}")
+            except Exception as e:
+                logging.error(f"Error in {source_name} search: {str(e)}")
+    
+    return sorted(all_subdomains)

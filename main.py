@@ -33,7 +33,7 @@ def format_time(seconds):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Find subdomains using Wayback Machine and Certificate Transparency Logs",
+        description="Find subdomains using multiple sources including Wayback Machine, CT Logs, Alienvault, Certspotter, and more",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument("-d", "--domain", required=True, 
@@ -53,18 +53,8 @@ def main():
         
         logging.info(f"Starting subdomain enumeration for: {args.domain}")
         
-        # Collect subdomains from Wayback Machine
-        logging.info("Searching Wayback Machine...")
-        wayback_subdomains = sf.search_wayback_machine(args.domain)
-        logging.info(f"Found {len(wayback_subdomains)} subdomains from Wayback Machine")
-        
-        # Collect subdomains from CT logs
-        logging.info("Searching Certificate Transparency logs...")
-        ct_subdomains = sf.ct_logs_subdomains(args.domain)
-        logging.info(f"Found {len(ct_subdomains)} subdomains from CT logs")
-        
-        # Combine and deduplicate results
-        all_subdomains = sorted(set(wayback_subdomains) | set(ct_subdomains))
+        # Search all sources
+        all_subdomains = sf.search_all_sources(args.domain)
         logging.info(f"Total unique subdomains found: {len(all_subdomains)}")
         
         # Check if subdomains are alive if requested

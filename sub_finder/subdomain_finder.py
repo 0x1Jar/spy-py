@@ -7,6 +7,7 @@ import time
 import re
 import socket
 from bs4 import BeautifulSoup # type: ignore
+import os
 
 def chunk_list(lst, chunk_size):
     """Split a list into smaller chunks"""
@@ -242,6 +243,63 @@ class SubdomainFinder:
             logging.error(f"Error in RapidDNS search: {str(e)}")
         return list(subdomains)
 
+    def search_shodan(self):
+        subdomains = set()
+        api_key = os.getenv('SHODAN_API_KEY')
+        if not api_key:
+            logging.info("Shodan API key not set, skipping")
+            return list(subdomains)
+
+        try:
+            params = {
+                'key': api_key,
+                'query': self.domain
+            }
+            response = requests.get(
+                'https://api.shodan.io/shodan/host/search',
+                params=params,
+                timeout=self.timeout
+            )
+            if response.status_code == 200:
+                data = response.json()
+                for result in data.get('matches', []):
+                    hostname = result.get('hostname')
+                    if hostname and is_valid_subdomain(hostname, self.domain):
+                        subdomains.add(hostname)
+            else:
+                logging.error(f"Shodan API error: {response.status_code}")
+        except Exception as e:
+            logging.error(f"Error in Shodan search: {str(e)}")
+        return list(subdomains)
+
+    def search_virustotal(self):
+        subdomains = set()
+        api_key = os.getenv('VIRUSTOTAL_API_KEY')
+        if not api_key:
+            logging.info("VirusTotal API key not set, skipping")
+            return list(subdomains)
+
+        headers = {
+            'x-apikey': api_key
+        }
+        try:
+            response = requests.get(
+                f'https://www.virustotal.com/api/v3/domains/{self.domain}/subdomains',
+                headers=headers,
+                timeout=self.timeout
+            )
+            if response.status_code == 200:
+                data = response.json()
+                for sub in data.get('data', []):
+                    subdomain = sub['id']
+                    if is_valid_subdomain(subdomain, self.domain):
+                        subdomains.add(subdomain)
+            else:
+                logging.error(f"VirusTotal API error: {response.status_code}")
+        except Exception as e:
+            logging.error(f"Error in VirusTotal search: {str(e)}")
+        return list(subdomains)
+
 def search_all_sources(domain):
     """
     Search all available sources for subdomains
@@ -255,6 +313,8 @@ def search_all_sources(domain):
         (finder.search_certspotter, "Certspotter"),
         (finder.search_hackertarget, "HackerTarget"),
         (finder.search_rapiddns, "RapidDNS"),
+        (finder.search_shodan, "Shodan"),
+        (finder.search_virustotal, "VirusTotal"),
         (search_wayback_machine, "Wayback Machine"),
         (ct_logs_subdomains, "CT Logs")
     ]

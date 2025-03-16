@@ -6,6 +6,13 @@
 - ⚡ Live subdomain validation with socket checks
 - 📝 Clear output formatting with status markers
 - 🔒 Environment variable-based API key management
+- 📚 Multiple enumeration modes:
+  - Wordlist-based scanning
+  - Multi-source intelligence gathering
+  - Mixed-mode (combining wordlist and external sources)
+- ⚙️ Customizable wordlist support
+- 🚀 Concurrent subdomain validation
+- 🕒 Real-time progress tracking
 
 ## Quick Start
 ```bash
@@ -30,10 +37,11 @@ python main.py -d example.com -o results.txt --check-alive
 - **Python 3.8+** (Tested on Python 3.13)
 - **Required Packages**:
   ```bash
-  requests
-  beautifulsoup4
-  dnspython
-  pyyaml
+  requests>=2.28.0
+  beautifulsoup4>=4.9.3
+  dnspython>=2.3.0
+  pyyaml>=6.0.0
+  urllib3>=2.0.0
   ```
 - **Optional Dependencies**:
   - `censys` (for Censys API)
@@ -68,17 +76,26 @@ python main.py [OPTIONS]
 - `-o, --output`: Save results to file
 - `-v, --verbose`: Enable debug logging
 - `--check-alive`: Validate subdomain reachability
+- `-w, --wordlist`: Specify custom wordlist file (default: wordlists/subdomains.txt)
+- `--wordlist-only`: Use only wordlist for enumeration (disable other sources)
+- `--mixed-mode`: Combine wordlist with external sources
 
 **Example Commands**:
 ```bash
-# Basic scan
+# Basic scan using all sources
 python main.py -d example.com
+
+# Wordlist-only mode
+python main.py -d example.com -w wordlists/subdomains.txt --wordlist-only
+
+# Mixed mode (wordlist + external sources)
+python main.py -d example.com -w wordlists/subdomains.txt --mixed-mode
 
 # Save output with status checks
 python main.py -d example.com -o results.txt --check-alive
 
-# Verbose mode
-python main.py -d example.com -v
+# Verbose mode with custom wordlist
+python main.py -d example.com -v -w custom_wordlist.txt
 ```
 
 ## Configuration
@@ -88,6 +105,28 @@ CENSYS_API_KEY=
 SHODAN_API_KEY=
 VIRUSTOTAL_API_KEY=
 ```
+
+## Scan Modes
+
+### 1. Multi-Source Mode (Default)
+Uses multiple external sources to discover subdomains:
+- Censys
+- Shodan
+- VirusTotal
+- Wayback Machine
+- Certificate Transparency Logs
+- And more...
+
+### 2. Wordlist Mode
+- Uses only wordlist-based enumeration
+- Faster for basic reconnaissance
+- Customizable wordlist support
+- DNS validation included
+
+### 3. Mixed Mode
+- Combines wordlist-based scanning with external sources
+- Comprehensive coverage
+- Ideal for thorough enumeration
 
 ## Contributing
 1. Fork the repository

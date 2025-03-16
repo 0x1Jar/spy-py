@@ -1,5 +1,4 @@
-requests
-urllib3
-dnspython
-beautifulsoup4
+requests>=2.28.0
+urllib3>=2.0.0
+dnspython>=2.3.0
 

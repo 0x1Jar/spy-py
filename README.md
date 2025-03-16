@@ -23,7 +23,7 @@
 ## Quick Start
 ```bash
 # 1. Clone repository
-git clone https://github.com/your-username/spy-py.git
+git clone https://github.com/0x1Jar/spy-py.git
 cd spy-py
 
 # 2. Install dependencies
@@ -42,7 +42,7 @@ python main.py -d example.com -o results.txt --check-alive
 ## Installation
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/spy-py.git
+   git clone https://github.com/0x1Jar/spy-py.git
    cd spy-py
    ```
 

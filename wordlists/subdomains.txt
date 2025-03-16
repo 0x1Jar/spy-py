@@ -1,0 +1,8 @@
+www
+mail
+ftp
+admin
+test
+dev
+staging
+api

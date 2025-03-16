@@ -70,28 +70,26 @@ def search_wayback_machine(domain):
     
     return list(subdomains)
 
-def is_valid_subdomain(subdomain, domain):
+def is_valid_subdomain(subdomain: str, domain: str) -> bool:
     """
-    Validate subdomain format and domain membership.
+    Validate subdomain format and domain membership with precompiled regex.
     """
-    try:
-        if not subdomain or not domain:
-            return False
-        if not subdomain.endswith(domain):
-            return False
-        subdomain_part = subdomain[:-len(domain)-1]
-        if not subdomain_part:
-            return False
-        if len(subdomain) > 253 or len(subdomain_part) > 63:
-            return False
-        pattern = re.compile(r'^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$')
-        if not pattern.match(subdomain_part):
-            return False
-        if '--' in subdomain_part:
-            return False
-        return True
-    except Exception:
+    if not subdomain or not domain:
         return False
+    if not subdomain.endswith(f".{domain}"):
+        return False
+    subdomain_part = subdomain[:-len(domain)-1]
+    if not subdomain_part:
+        return False
+    if len(subdomain) > 253 or len(subdomain_part) > 63:
+        return False
+    # Precompiled regex for efficiency
+    pattern = re.compile(r"^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$")
+    if not pattern.match(subdomain_part):
+        return False
+    if "--" in subdomain_part:
+        return False
+    return True
 
 def ct_logs_subdomains(domain: str) -> list[str]:
     """
@@ -141,42 +139,34 @@ def ct_logs_subdomains(domain: str) -> list[str]:
     
     return list(subdomains)
 
-def check_alive_parallel(subdomains, timeout=5):
+def check_alive_parallel(subdomains, timeout=5, max_workers=20):
     """
-    Check if subdomains are alive using parallel processing.
+    Check subdomains' reachability using parallel socket connections with error handling.
     """
     results = {}
-    
-    def check_subdomain(subdomain):
-        try:
-            # Try DNS resolution first
-            dns.resolver.resolve(subdomain, 'A')
-            try:
-                # Try connecting to the host
-                socket.create_connection((subdomain, 80), timeout=timeout)
-                return subdomain, True
-            except:
-                try:
-                    # Try HTTPS if HTTP fails
-                    socket.create_connection((subdomain, 443), timeout=timeout)
-                    return subdomain, True
-                except:
-                    return subdomain, False
-        except:
-            return subdomain, False
+    pattern = re.compile(r"^[a-zA-Z0-9.-]+$")  # Basic validation
 
-    with ThreadPoolExecutor(max_workers=50) as executor:
-        future_to_subdomain = {executor.submit(check_subdomain, subdomain): subdomain 
-                             for subdomain in subdomains}
-        
-        for future in as_completed(future_to_subdomain):
-            try:
-                subdomain, is_alive = future.result()
-                results[subdomain] = is_alive
-            except Exception as e:
-                subdomain = future_to_subdomain[future]
+    def socket_check(subdomain, timeout):
+        try:
+            for port in [80, 443]:
+                with socket.create_connection((subdomain, port), timeout=timeout):
+                    return True
+        except (socket.timeout, ConnectionRefusedError, socket.gaierror):
+            pass
+        return False
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = []
+        for subdomain in subdomains:
+            if not pattern.match(subdomain):
                 results[subdomain] = False
-                logging.debug(f"Error checking {subdomain}: {str(e)}")
+                continue
+            future = executor.submit(socket_check, subdomain, timeout)
+            futures.append((subdomain, future))
+        
+        for subdomain, future in futures:
+            is_alive = future.result()
+            results[subdomain] = is_alive
 
     return results
 

@@ -5,7 +5,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import urlparse
 import time
 import re
-import dns.resolver
 import socket
 from bs4 import BeautifulSoup # type: ignore
 

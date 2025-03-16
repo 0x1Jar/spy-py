@@ -33,20 +33,6 @@ echo "VIRUSTOTAL_API_KEY=your_virustotal_key" >> .env
 python main.py -d example.com -o results.txt --check-alive
 ```
 
-## Dependencies
-- **Python 3.8+** (Tested on Python 3.13)
-- **Required Packages**:
-  ```bash
-  requests>=2.28.0
-  beautifulsoup4>=4.9.3
-  dnspython>=2.3.0
-  pyyaml>=6.0.0
-  urllib3>=2.0.0
-  ```
-- **Optional Dependencies**:
-  - `censys` (for Censys API)
-  - `virustotal-python` (for VirusTotal API)
-
 ## Installation
 1. **Clone the repository**
    ```bash

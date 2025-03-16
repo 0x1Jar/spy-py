@@ -48,52 +48,43 @@ def main():
     args = parser.parse_args()
     setup_logging(args.verbose)
     
-    try:
-        start_time = time.time()
-        
-        logging.info(f"🚀 Starting subdomain enumeration for: {args.domain} 🔍")
-        
-        # Search all sources
-        all_subdomains = sf.search_all_sources(args.domain)
-        logging.info(f"✅ Total unique subdomains found: {len(all_subdomains)} ✨")
-        
-        # Check if subdomains are alive if requested
-        alive_status = {}
-        if args.check_alive and all_subdomains:
-            logging.info("Checking subdomain status...")
-            alive_status = sf.check_alive_parallel(all_subdomains)
-            alive_count = sum(1 for status in alive_status.values() if status)
-            logging.info(f"✅ Found {alive_count} active subdomains 💡")
-        
-        # Output results
-        if args.output:
-            args.output.parent.mkdir(parents=True, exist_ok=True)
-            with open(args.output, "w") as f:
-                for subdomain in all_subdomains:
-                    f.write(f"{subdomain}\n")
-                    if args.check_alive:
-                        status = "Active" if alive_status.get(subdomain) else "Inactive"
-                        f.write(f"Status: {status}\n")
-            logging.info(f"Results written to: {args.output}")
-        else:
+    start_time = time.time()
+    logging.info(f"🚀 Starting subdomain enumeration for: {args.domain} 🔍")
+
+    # Search all sources
+    all_subdomains = sf.search_all_sources(args.domain)
+
+    # Add Cyenis search to the list of sources (commented out for now)
+    # all_subdomains.update(sf.search_cyenis(args.domain))
+    logging.info(f"✅ Total unique subdomains found: {len(all_subdomains)} ✨")
+
+    # Check if subdomains are alive if requested
+    if args.check_alive and all_subdomains:
+        logging.info("Checking subdomain status...")
+        alive_status = sf.check_alive_parallel(all_subdomains)
+        alive_count = sum(1 for status in alive_status.values() if status)
+        logging.info(f"✅ Found {alive_count} active subdomains 💡")
+
+    # Output results
+    if args.output:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        with open(args.output, "w") as f:
             for subdomain in all_subdomains:
-                print(subdomain)
+                f.write(f"{subdomain}\n")
                 if args.check_alive:
                     status = "Active" if alive_status.get(subdomain) else "Inactive"
-                    print(f"Status: {status}")
-        
-        # Show completion time
-        elapsed_time = time.time() - start_time
-        logging.info(f"Scan completed in {format_time(elapsed_time)}")
-        
-    except KeyboardInterrupt:
-        logging.info("\nScan interrupted by user")
-        sys.exit(1)
-    except Exception as e:
-        logging.error(f"An error occurred: {str(e)}")
-        if args.verbose:
-            logging.exception("Detailed error information:")
-        sys.exit(1)
+                    f.write(f"Status: {status}\n")
+        logging.info(f"Results written to: {args.output}")
+    else:
+        for subdomain in all_subdomains:
+            print(subdomain)
+            if args.check_alive:
+                status = "Active" if alive_status.get(subdomain) else "Inactive"
+                print(f"Status: {status}")
+
+    # Show completion time
+    elapsed_time = time.time() - start_time
+    logging.info(f"Scan completed in {format_time(elapsed_time)}")
 
 if __name__ == "__main__":
     freeze_support()

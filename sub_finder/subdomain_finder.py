@@ -300,6 +300,37 @@ class SubdomainFinder:
             logging.error(f"Error in VirusTotal search: {str(e)}")
         return list(subdomains)
 
+    def search_censys(self):
+        subdomains = set()
+        api_key = os.getenv('CENSYS_API_KEY')
+        if not api_key:
+            logging.info("Censys API key not set, skipping")
+            return list(subdomains)
+
+        try:
+            url = "https://search.censys.io/api/v2/hosts/search"
+            headers = {
+                'Authorization': f"Bearer {api_key}",
+                'Content-Type': 'application/json'
+            }
+            query = {
+                'query': f"domain: {self.domain}",
+                'page_size': 100
+            }
+            response = requests.post(url, headers=headers, json=query, timeout=self.timeout)
+            response.raise_for_status()
+            data = response.json()
+            for hit in data.get('hits', []):
+                if 'ip' in hit and 'hostname' in hit:
+                    hostname = hit['hostname']
+                    if is_valid_subdomain(hostname, self.domain):
+                        subdomains.add(hostname)
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Censys API request failed: {e}")
+        except Exception as e:
+            logging.error(f"Error in Censys search: {e}")
+        return list(subdomains)
+
 def search_all_sources(domain):
     """
     Search all available sources for subdomains
@@ -316,7 +347,8 @@ def search_all_sources(domain):
         (finder.search_shodan, "Shodan"),
         (finder.search_virustotal, "VirusTotal"),
         (search_wayback_machine, "Wayback Machine"),
-        (ct_logs_subdomains, "CT Logs")
+        (ct_logs_subdomains, "CT Logs"),
+        (finder.search_censys, "Censys")
     ]
     
     # Execute searches in parallel

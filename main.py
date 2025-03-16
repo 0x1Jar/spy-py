@@ -97,6 +97,11 @@ def main():
         help='Path to custom subdomain wordlist'
     )
     parser.add_argument(
+        '--wordlist-only',
+        action='store_true',
+        help='Use only wordlist for subdomain enumeration (disable other sources)'
+    )
+    parser.add_argument(
         '--mixed-mode',
         action='store_true',
         help='Combine wordlist with external sources'
@@ -119,11 +124,17 @@ def main():
     start_time = time.time()
     logging.info(f"🚀 Starting subdomain enumeration for: {args.domain} 🔍")
 
-    # Search all sources
-    all_subdomains = sf.search_all_sources(args.domain)
+    all_subdomains = set()
 
-    # Add Cyenis search to the list of sources (commented out for now)
-    # all_subdomains.update(sf.search_cyenis(args.domain))
+    # Handle different modes
+    if args.wordlist_only:
+        logging.info("Using wordlist-only mode")
+        # Add function to handle wordlist-based enumeration
+        all_subdomains.update(sf.enumerate_from_wordlist(args.domain, args.wordlist))
+    else:
+        # Search all sources
+        all_subdomains.update(sf.search_all_sources(args.domain))
+
     logging.info(f"✅ Total unique subdomains found: {len(all_subdomains)} ✨")
 
     # Check if subdomains are alive if requested

@@ -370,3 +370,47 @@ def search_all_sources(domain):
                 logging.error(f"Error in {source_name} search: {str(e)}")
     
     return sorted(all_subdomains)
+
+def enumerate_from_wordlist(domain, wordlist_path, max_workers=50):
+    """
+    Enumerate subdomains using a wordlist.
+    
+    Args:
+        domain (str): Target domain
+        wordlist_path (str): Path to wordlist file
+        max_workers (int): Maximum number of concurrent workers
+    
+    Returns:
+        set: Set of discovered subdomains
+    """
+    subdomains = set()
+    
+    try:
+        with open(wordlist_path, 'r') as f:
+            wordlist = [line.strip() for line in f if line.strip()]
+        
+        logging.info(f"Loaded {len(wordlist)} entries from wordlist")
+        
+        def check_subdomain(word):
+            subdomain = f"{word}.{domain}"
+            try:
+                socket.gethostbyname(subdomain)
+                return subdomain
+            except socket.gaierror:
+                return None
+        
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = [executor.submit(check_subdomain, word) for word in wordlist]
+            for future in as_completed(futures):
+                try:
+                    result = future.result()
+                    if result:
+                        subdomains.add(result)
+                        logging.debug(f"Found subdomain: {result}")
+                except Exception as e:
+                    logging.debug(f"Error checking subdomain: {str(e)}")
+        
+    except Exception as e:
+        logging.error(f"Error in wordlist enumeration: {str(e)}")
+    
+    return subdomains

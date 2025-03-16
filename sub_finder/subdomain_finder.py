@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 import time
 import re
 import socket
-from bs4 import BeautifulSoup # type: ignore
+from bs4 import BeautifulSoup 
 import os
 
 def chunk_list(lst, chunk_size):

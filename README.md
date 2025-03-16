@@ -1,43 +1,103 @@
-# Spy-Py Subdomain Enumeration Tool 🔍
+# Spy-Py Subdomain Scanner
 
-## Security Setup with Environment Variables 🛡️
+## Features
+- 🛠️ 10+ data sources including Censys, Shodan, VirusTotal, and Wayback Machine
+- 🔍 Parallelized subdomain discovery
+- ⚡ Live subdomain validation with socket checks
+- 📝 Clear output formatting with status markers
+- 🔒 Environment variable-based API key management
 
-### Why Secure API Keys? ❓
-To prevent accidental exposure of sensitive credentials on GitHub, we use **environment variables**. 🔒
+## Quick Start
+```bash
+# 1. Clone repository
+git clone https://github.com/your-username/spy-py.git
+cd spy-py
 
-### Steps Taken 🚀
-✅ **1. `.gitignore` Configuration**  
-Added entries to exclude `.env` files:  
-```plaintext
-.env
-.venv/
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Configure API keys
+cp .env.example .env
+echo "CENSYS_API_KEY=your_censys_key" >> .env
+echo "SHODAN_API_KEY=your_shodan_key" >> .env
+echo "VIRUSTOTAL_API_KEY=your_virustotal_key" >> .env
+
+# 4. Run the scanner
+python main.py -d example.com -o results.txt --check-alive
 ```
-🚫 This stops sensitive files from being committed.
 
-✅ **2. Example `.env` File**  
-Created `.env.example` with placeholders:  
+## Dependencies
+- **Python 3.8+** (Tested on Python 3.11)
+- **Required Packages**:
+  ```bash
+  requests
+  beautifulsoup4
+  dnspython
+  pyyaml
+  ```
+- **Optional Dependencies**:
+  - `censys` (for Censys API)
+  - `virustotal-python` (for VirusTotal API)
+
+## Installation
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-username/spy-py.git
+   cd spy-py
+   ```
+
+2. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Configure API keys**
+   - Copy the example environment file:
+     ```bash
+     cp .env.example .env
+     ```
+   - Edit `.env` and replace placeholder values with your actual API keys.
+
+## Usage
+```bash
+python main.py [OPTIONS]
+```
+
+**Key Options**:
+- `-d, --domain` (required): Target domain (e.g., example.com)
+- `-o, --output`: Save results to file
+- `-v, --verbose`: Enable debug logging
+- `--check-alive`: Validate subdomain reachability
+
+**Example Commands**:
+```bash
+# Basic scan
+python main.py -d example.com
+
+# Save output with status checks
+python main.py -d example.com -o results.txt --check-alive
+
+# Verbose mode
+python main.py -d example.com -v
+```
+
+## Configuration
+Set these environment variables in `.env`:
 ```env
+CENSYS_API_KEY=
 SHODAN_API_KEY=
 VIRUSTOTAL_API_KEY=
 ```
-📝 Rename to `.env` and fill your keys.
 
-✅ **3. Code Modifications**  
-`subdomain_finder.py` now reads keys from environment variables:  
-```python
-import os
-api_key = os.getenv('SHODAN_API_KEY')  # 🔑 Secure access
-```
+## Contributing
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some feature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a pull request
 
-## How to Use 🏃♂️
-1. Copy `.env.example` to `.env` and add your API keys.  
-2. Run the tool:  
-```bash
-python main.py target-domain.com  
-```
-3. Results will be saved in `logs/`. 📂
+## License
+MIT License - see [LICENSE](LICENSE) file
 
-## Contributing ✨
-Feel free to suggest improvements! Open an issue or PR.  
-
-*Stay secure and automate wisely!* 🔒🚀
+## Disclaimer
+This tool is for educational and authorized penetration testing purposes only. Ensure proper authorization before scanning any domains.

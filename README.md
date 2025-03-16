@@ -27,7 +27,7 @@ python main.py -d example.com -o results.txt --check-alive
 ```
 
 ## Dependencies
-- **Python 3.8+** (Tested on Python 3.11)
+- **Python 3.8+** (Tested on Python 3.13)
 - **Required Packages**:
   ```bash
   requests
